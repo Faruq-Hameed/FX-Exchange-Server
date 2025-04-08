@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
-import { ExchangeRate } from '../fx/entities/exchange-rate.entity';
+import { ExchangeRate } from 'src/fx/entities/exchange-rate.entity.ts';
 
 @Injectable()
 export class AdminService {

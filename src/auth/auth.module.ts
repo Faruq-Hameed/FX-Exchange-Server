@@ -3,12 +3,13 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 import { OTP } from './entities/otp.entity';
-import { MailModule } from '../mail/mail.module';
+import { MailModule } from 'src/mail/mail.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MailModule } from '../mail/mail.module';
       }),
     }),
     TypeOrmModule.forFeature([OTP]),
+    ScheduleModule.forRoot(),  // to enables the scheduler for unused otp deletion
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, MoreThan, Repository } from 'typeorm';
@@ -9,7 +13,7 @@ import { OTP } from './entities/otp.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { MailService } from '../mail/mail.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -23,10 +27,10 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const user = await this.usersService.create(registerDto);
-    
+
     // Generate OTP
     const otp = this.generateOTP();
-    
+
     // Save OTP to database
     const otpRecord = this.otpRepository.create({
       userId: user.id,
@@ -34,32 +38,37 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes expiration
     });
     await this.otpRepository.save(otpRecord);
-    
+
     // Send verification email
     await this.mailService.sendVerificationEmail(user.email, otp);
-    
-    return { message: 'User registered successfully. Please check your email for verification code.' };
+
+    return {
+      message:
+        'User registered successfully. Please check your email for verification code.',
+    };
   }
 
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
-    
+
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    
+
     if (!user.isVerified) {
-      throw new UnauthorizedException('Please verify your email before logging in');
+      throw new UnauthorizedException(
+        'Please verify your email before logging in',
+      );
     }
-    
+
     const payload = { sub: user.id, email: user.email };
-    
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -71,25 +80,31 @@ export class AuthService {
 
   async verifyOtp(userId: string, verifyOtpDto: VerifyOtpDto) {
     const { code } = verifyOtpDto;
-    
-    const otp = await this.otpRepository.({
+
+    // Find the OTP record based on the userId and code
+    const otp = await this.otpRepository.findOne({
       where: {
         userId,
         code,
       },
     });
-    
+
     if (!otp) {
       throw new BadRequestException('Invalid or expired OTP');
     }
-    
-    // Mark OTP as used
-    otp.setExpiryDate= new Date();
-    await this.otpRepository.save(otp);
-    
+
+    // Check if OTP has expired(incase not deleted yet), 
+    if (otp.expiresAt < new Date()) {
+      await this.otpRepository.delete(otp.id); // still delete if expired
+      throw new BadRequestException('OTP has expired');
+    }
+
+    // If OTP is valid, delete it after use
+    await this.otpRepository.delete(otp.id);
+
     // Verify user
     await this.usersService.verifyUser(userId);
-    
+
     return { message: 'Email verified successfully' };
   }
 
@@ -98,14 +113,14 @@ export class AuthService {
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    
+
     if (user.isVerified) {
       throw new BadRequestException('User is already verified');
     }
-    
+
     // Generate new OTP
     const otp = this.generateOTP();
-    
+
     // Save OTP to database
     const otpRecord = this.otpRepository.create({
       userId: user.id,
@@ -113,10 +128,10 @@ export class AuthService {
       expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes expiration
     });
     await this.otpRepository.save(otpRecord);
-    
+
     // Send verification email
     await this.mailService.sendVerificationEmail(user.email, otp);
-    
+
     return { message: 'Verification code sent to your email' };
   }
 
@@ -125,11 +140,11 @@ export class AuthService {
   }
 
   // Cron job to delete expired OTPs
-  @Cron(CronExpression.EVERY_5_MINUTES)  // Run every 5 minutes
+  @Cron(CronExpression.EVERY_5_MINUTES) // Run every 5 minutes
   private async deleteExpiredOTPs() {
     const currentDate = new Date();
     await this.otpRepository.delete({
-      expiresAt: LessThan(currentDate),  // Delete OTPs that have expired
+      expiresAt: LessThan(currentDate), // Delete OTPs that have expired
     });
   }
 }
