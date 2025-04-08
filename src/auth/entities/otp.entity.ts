@@ -27,7 +27,7 @@ export class OTP {
    @BeforeInsert()
    setExpiryDate() {
      const expiryTime = new Date();
-     expiryTime.setMinutes(expiryTime.getMinutes() + 5); // Add 5 minutes tothe 
+     expiryTime.setMinutes(expiryTime.getMinutes() + 15); // Add 15 minutes tothe 
      this.expiresAt = expiryTime;
    }
 }

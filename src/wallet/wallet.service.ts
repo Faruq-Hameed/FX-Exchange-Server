@@ -6,13 +6,15 @@ import { FundWalletDto } from './dto/fund-wallet.dto';
 import { TransferFundsDto } from './dto/transfer-funds.dto';
 import { FxService } from 'src/fx/fx.service';
 import { TransactionService } from '../transaction/transaction.service';
-import { TransactionType, TransactionStatus } from '../transaction/entities/transaction.entity';
+import { TransactionType, TransactionStatus, Transaction } from '../transaction/entities/transaction.entity';
+import { TransferFundsWithIdempotencyDto } from 'src/transaction/dto/transfer-funds-with-idempotency.dto';
 
 @Injectable()
 export class WalletService {
   constructor(
     @InjectRepository(Wallet)
     private walletRepository: Repository<Wallet>,
+    private transactionRepository: Repository<Transaction>,
     private fxService: FxService,
     private transactionService: TransactionService,
     private dataSource: DataSource,
@@ -174,4 +176,95 @@ export class WalletService {
     
     await this.walletRepository.save(usdWallet);
   }
+
+   async transferFundsWithIdempotency(userId: string, transferFundsDto: TransferFundsWithIdempotencyDto): Promise<any> {
+      const { fromCurrency, toCurrency, amount, idempotencyKey } = transferFundsDto;
+      
+      return this.transactionService.processWithIdempotency(idempotencyKey, async () => {
+        if (fromCurrency === toCurrency) {
+          throw new BadRequestException('From and To currencies must be different');
+        }
+        
+        // Start a transaction
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        
+        try {
+          // Get source wallet with lock for update
+          const sourceWallet = await queryRunner.manager.findOne(Wallet, {
+            where: { userId, currency: fromCurrency },
+            lock: { mode: 'pessimistic_write' },
+          });
+          
+          if (!sourceWallet) {
+            throw new NotFoundException(`Wallet for currency ${fromCurrency} not found`);
+          }
+          
+          // Check if source wallet has enough balance
+          if (Number(sourceWallet.balance) < amount) {
+            throw new BadRequestException(`Insufficient ${fromCurrency} balance`);
+          }
+          
+          // Get exchange rate
+          const exchangeRate = await this.fxService.getExchangeRate(fromCurrency, toCurrency);
+          
+          // Calculate converted amount
+          const convertedAmount = amount * exchangeRate;
+          
+          // Update source wallet
+          sourceWallet.balance = Number(sourceWallet.balance) - amount;
+          await queryRunner.manager.save(sourceWallet);
+          
+          // Get or create destination wallet with lock
+          let destWallet = await queryRunner.manager.findOne(Wallet, {
+            where: { userId, currency: toCurrency },
+            lock: { mode: 'pessimistic_write' },
+          });
+          
+          if (!destWallet) {
+            destWallet = this.walletRepository.create({
+              userId,
+              currency: toCurrency,
+              balance: 0,
+            });
+          }
+          
+          // Update destination wallet
+          destWallet.balance = Number(destWallet.balance) + convertedAmount;
+          destWallet = await queryRunner.manager.save(destWallet);
+          
+          // Create transaction record
+          const transaction = await queryRunner.manager.save(
+            this.transactionRepository.create({
+              userId,
+              type: TransactionType.CONVERSION,
+              status: TransactionStatus.COMPLETED,
+              amount,
+              fromCurrency,
+              toCurrency,
+              exchangeRate,
+            })
+          );
+          
+          // Commit transaction
+          await queryRunner.commitTransaction();
+          
+          return {
+            transaction,
+            sourceWallet,
+            destWallet,
+            convertedAmount,
+            exchangeRate,
+          };
+        } catch (error) {
+          // Rollback transaction in case of error
+          await queryRunner.rollbackTransaction();
+          throw error;
+        } finally {
+          // Release query runner
+          await queryRunner.release();
+        }
+      });
+    }
 }
