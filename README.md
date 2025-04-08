@@ -45,6 +45,21 @@ The application is built with a modular architecture:
 - The system creates wallets on-demand for new currencies-
 - All financial operations are performed in database transactions-
 - 
+- **Exchange Rate Integration**:
+
+Integrates with external exchange rate API-
+- Caches rates for performance-
+- Has fallback mechanisms for API failures-
+- 
+
+- **Transaction Security**:
+
+- **Prevents double-spending through transaction locks**-
+- Validates balances before transfers-
+- Maintains detailed transaction history-
+- idempotency
+
+
 ## Setup Instructions
 
 ### Prerequisites
