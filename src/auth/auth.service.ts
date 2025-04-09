@@ -78,13 +78,19 @@ export class AuthService {
     };
   }
 
-  async verifyOtp(userId: string, verifyOtpDto: VerifyOtpDto) {
-    const { code } = verifyOtpDto;
+  async verifyOtp( verifyOtpDto: VerifyOtpDto) {
+    const { email, code } = verifyOtpDto;
+  
+  // Find the user by email first
+  const user = await this.usersService.findByEmail(email);
+  if (!user) {
+    throw new BadRequestException('User not found');
+  }
 
     // Find the OTP record based on the userId and code
     const otp = await this.otpRepository.findOne({
       where: {
-        userId,
+        userId: user.id,
         code,
       },
     });
@@ -103,7 +109,7 @@ export class AuthService {
     await this.otpRepository.delete(otp.id);
 
     // Verify user
-    await this.usersService.verifyUser(userId);
+    await this.usersService.verifyUser(user.id);
 
     return { message: 'Email verified successfully' };
   }

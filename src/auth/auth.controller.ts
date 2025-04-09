@@ -20,9 +20,8 @@ export class AuthController {
   }
 
   @Post('verify')
-  @UseGuards(JwtAuthGuard)
   verifyOtp(@Request() req, @Body() verifyOtpDto: VerifyOtpDto) {
-    return this.authService.verifyOtp(req.user.id, verifyOtpDto);
+    return this.authService.verifyOtp( verifyOtpDto);
   }
 
   @Post('resend-verification/:email')
