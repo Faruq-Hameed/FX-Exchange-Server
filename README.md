@@ -16,7 +16,7 @@ This is the backend implementation for an FX Trading application built using Nes
 - **ORM**: TypeORM
 - **Database**: PostgreSQL
 - **Authentication**: JWT
-- **API Documentation**: Swagger
+- **API Documentation**: Postman
 - **Email**: Nodemailer
 
 ## Project Structure
