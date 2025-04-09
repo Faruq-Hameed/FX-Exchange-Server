@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
-import { ExchangeRate } from 'src/fx/entities/exchange-rate.entity.ts';
+import { ExchangeRate } from 'src/fx/entities/exchange-rate.entity';
 
 @Injectable()
 export class AdminService {
@@ -29,11 +29,15 @@ export class AdminService {
     });
   }
 
-  async adjustExchangeRate(baseCurrency: string, targetCurrency: string, rate: number) {
+  async adjustExchangeRate(
+    baseCurrency: string,
+    targetCurrency: string,
+    rate: number,
+  ) {
     let exchangeRate = await this.exchangeRateRepository.findOne({
       where: { baseCurrency, targetCurrency },
     });
-    
+
     if (exchangeRate) {
       // Update existing rate
       exchangeRate.rate = rate;
@@ -45,7 +49,7 @@ export class AdminService {
         rate,
       });
     }
-    
+
     return this.exchangeRateRepository.save(exchangeRate);
   }
 }

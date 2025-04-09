@@ -1,4 +1,3 @@
-// src/transaction/entities/idempotency-key.entity.ts
 import { Entity, Column, PrimaryColumn, CreateDateColumn } from 'typeorm';
 
 @Entity()

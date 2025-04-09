@@ -4,7 +4,7 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
-import { ExchangeRate } from '../fx/entities/exchange-rate.entity.ts';
+import { ExchangeRate } from '../fx/entities/exchange-rate.entity';
 
 @Module({
   imports: [

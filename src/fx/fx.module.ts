@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FxService } from './fx.service';
 import { FxController } from './fx.controller';
-import { ExchangeRate } from './entities/exchange-rate.entity.ts';
+import { ExchangeRate } from './entities/exchange-rate.entity';
 
 @Module({
   imports: [

@@ -17,7 +17,7 @@ export class FxController {
     return this.fxService.getSupportedCurrencies();
   }
 
-  @Get('rate/:from/:to')
+  @Get('rates/:from/:to')
   getExchangeRate(@Param('from') fromCurrency: string, @Param('to') toCurrency: string) {
     return this.fxService.getExchangeRate(fromCurrency, toCurrency);
   }
