@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { FundWalletDto } from './dto/fund-wallet.dto';
-import { TransferFundsDto } from './dto/transfer-funds.dto';
+import { TradeFundsDto } from './dto/transfer-funds.dto';
 import { FxService } from 'src/fx/fx.service';
 import { TransactionService } from '../transaction/transaction.service';
 import {
@@ -36,6 +36,7 @@ export class WalletService {
     });
   }
 
+  /** Get or create a wallet for the user and currency */
   async getWallet(userId: string, currency: string): Promise<Wallet> {
     const wallet = await this.walletRepository.findOne({
       where: { userId, currency },
@@ -99,11 +100,13 @@ export class WalletService {
     }
   }
 
-  async transferFunds(
+  // Trade or convert funds between wallets
+  // This method handles both trading and converting funds both are the same for this purpose
+  async tradeOrConvertFunds(
     userId: string,
-    transferFundsDto: TransferFundsDto,
+    tradeFundsDto: TradeFundsDto,
   ): Promise<any> {
-    const { fromCurrency, toCurrency, amount } = transferFundsDto;
+    const { fromCurrency, toCurrency, amount } = tradeFundsDto;
 
     if (fromCurrency === toCurrency) {
       throw new BadRequestException('From and To currencies must be different');
@@ -119,11 +122,11 @@ export class WalletService {
       const sourceWallet = await this.getWallet(userId, fromCurrency);
 
       // Check if source wallet has enough balance
-      if (Number(sourceWallet.balance) < amount) {
+      if (sourceWallet.balance < amount) {
         throw new BadRequestException(`Insufficient ${fromCurrency} balance`);
       }
 
-      // Get exchange rate
+      // Get the exchange rate between the currencies
       const exchangeRate = await this.fxService.getExchangeRate(
         fromCurrency,
         toCurrency,

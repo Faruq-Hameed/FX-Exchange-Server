@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Transaction } from '../transaction/entities/transaction.entity';
 import { ExchangeRate } from 'src/fx/entities/exchange-rate.entity';
+import { FxService } from 'src/fx/fx.service';
 
 @Injectable()
 export class AdminService {
@@ -14,6 +15,8 @@ export class AdminService {
     private transactionRepository: Repository<Transaction>,
     @InjectRepository(ExchangeRate)
     private exchangeRateRepository: Repository<ExchangeRate>,
+      private fxService: FxService,
+    
   ) {}
 
   async getAllUsers() {
@@ -52,4 +55,6 @@ export class AdminService {
 
     return this.exchangeRateRepository.save(exchangeRate);
   }
+
+  async addNewCurrency(currency: string){}
 }
