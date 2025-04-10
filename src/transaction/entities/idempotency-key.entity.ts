@@ -6,7 +6,7 @@ export class IdempotencyKey { // Unique key for idempotency. It ensures that the
   key: string;
 
   @Column('json', { nullable: true })
-  response: any;
+  response:JSON;
 
   @Column({ nullable: true })
   transactionId: string;

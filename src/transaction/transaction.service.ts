@@ -45,7 +45,7 @@ export class TransactionService {
 
     // If we have a response, return it immediately
     if (existingKey && !existingKey.isProcessing && existingKey.response) {
-      return existingKey.response;
+      return existingKey.response as T;
     }
 
     // If the transaction is currently processing, throw a conflict error
@@ -81,10 +81,15 @@ export class TransactionService {
 
       // Store the result with the idempotency key
       await this.idempotencyKeyRepository.update({ key: idempotencyKey }, {
-        response: result as unknown as (() => string) | DeepPartial<unknown>[] | readonly DeepPartial<unknown>[] | DeepPartial<any>,
+        response: result,
         isProcessing: false,
-        transactionId: (result as any)?.id || (result as any)?.transaction?.id || null,
+        transactionId: (result as unknown as any).transaction.id as string
       });
+      // await this.idempotencyKeyRepository.update({ key: idempotencyKey }, {
+      //   response: result as unknown as (() => string) | DeepPartial<unknown>[] | readonly DeepPartial<unknown>[] | DeepPartial<any>,
+      //   isProcessing: false,
+      //   transactionId: (result as any)?.id || (result as any)?.transaction?.id || null,
+      // });
 
       return result;
     } catch (error) {
