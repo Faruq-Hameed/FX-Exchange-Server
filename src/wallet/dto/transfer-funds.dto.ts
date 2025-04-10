@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
 
-export class TransferFundsDto {
+export class TradeFundsDto {
   @IsNotEmpty()
   @IsString()
   fromCurrency: string;

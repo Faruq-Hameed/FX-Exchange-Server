@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -16,7 +17,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -24,6 +25,11 @@ export class AuthService {
     @InjectRepository(OTP)
     private otpRepository: Repository<OTP>,
   ) {}
+
+  async onModuleInit() {
+    // Initialize otp deletion on startup
+    await this.deleteExpiredOTPs();
+  }
 
   async register(registerDto: RegisterDto) {
     const user = await this.usersService.create(registerDto);

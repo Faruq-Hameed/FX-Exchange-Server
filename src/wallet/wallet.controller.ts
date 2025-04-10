@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common'
 import { WalletService } from './wallet.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FundWalletDto } from './dto/fund-wallet.dto';
-import { TransferFundsDto } from './dto/transfer-funds.dto';
+import { TradeFundsDto } from './dto/transfer-funds.dto';
 import { TransferFundsWithIdempotencyDto } from 'src/transaction/dto/transfer-funds-with-idempotency.dto';
 import { TransactionService } from 'src/transaction/transaction.service';
 
@@ -24,10 +24,11 @@ export class WalletController {
     return this.walletService.fundWallet(req.user.id, fundWalletDto);
   }
 
-  @Post('transfer')
-  transferFunds(@Request() req, @Body() transferFundsDto: TransferFundsDto) {
-    return this.walletService.transferFunds(req.user.id, transferFundsDto);
+  @Post(['trade', 'convert'])
+  tradeOrConvertFunds(@Request() req, @Body() tradeFundsDto: TradeFundsDto) {
+    return this.walletService.tradeOrConvertFunds(req.user.id, tradeFundsDto);
   }
+
 
   @Post('transfer-with-idempotency')
   transferFundsWithIdempotency(@Request() req, @Body() transferFundsDto: TransferFundsWithIdempotencyDto) {
