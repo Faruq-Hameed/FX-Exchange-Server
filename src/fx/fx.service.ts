@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
   NotFoundException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -16,7 +17,7 @@ import { lastValueFrom } from 'rxjs';
 @Injectable()
 export class FxService implements OnModuleInit {
   private readonly logger = new Logger(FxService.name);
-  public supportedCurrencies = ['NGN', 'USD', 'EUR', 'GBP']; //updatable by admin
+  private supportedCurrencies = ['NGN', 'USD', 'EUR', 'GBP']; //updatable by admin
   private cachedRates: Record<string, Record<string, number>> = {};
 
   constructor(
@@ -249,5 +250,18 @@ export class FxService implements OnModuleInit {
     }
 
     return allRates;
+  }
+
+  //function that can be used to add new supported currency
+  async addSupportedCurrency(newCurrency: string): Promise<string[]> {
+  //check if the currency has not been added
+  const existingCurrencies = this.supportedCurrencies;
+  if(existingCurrencies.includes(newCurrency)){
+    throw new ConflictException(`currency ${newCurrency} already exist`)
+  }
+  
+  //add the new currency
+  this.supportedCurrencies.push(newCurrency);
+    return this.supportedCurrencies
   }
 }

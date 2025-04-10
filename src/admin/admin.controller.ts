@@ -4,12 +4,16 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { AdminService } from './admin.service';
+import { FxService } from 'src/fx/fx.service';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private fxService: FxService,
+  ) {}
 
   @Get('users')
   getAllUsers() {
@@ -32,5 +36,10 @@ export class AdminController {
       targetCurrency,
       rate,
     );
+  }
+
+  @Post('currency/:currency')
+  addNewCurrency(@Param('currency') currency: string) {
+    return this.fxService.addSupportedCurrency(currency);
   }
 }
